@@ -1,5 +1,7 @@
 # DIVA Slider
 
+[中文文档](README.zh-CN.md)
+
 DIVA Slider is a phone and browser based input bridge for Project DIVA Arcade style setups.
 It provides a 32-cell touch slider, cabinet buttons, coin pulses, and LED feedback without
 modifying game files.
