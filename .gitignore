@@ -1,0 +1,54 @@
+# Local reference files and third-party binaries.
+Resource/
+
+# IDE/editor state.
+.idea/
+.vscode/
+*.iml
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS noise.
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment and local config.
+.env
+.env.*
+App/local.properties
+
+# Logs and runtime diagnostics.
+*.log
+divaslider-dll.log
+
+# Build output directories.
+build/
+**/build/
+
+# Go cache/test output and local server binaries.
+.gocache/
+Server/.gocache/
+*.test
+coverage.out
+Server/divaslider-server
+Server/divaslider-server.exe
+
+# Android/Gradle output.
+App/.gradle/
+App/.kotlin/
+*.apk
+*.ap_
+*.aab
+
+# Visual Studio / MSVC output.
+*.obj
+*.pdb
+*.exp
+*.lib
+*.ilk
+*.iobj
+*.ipdb
+*.dll

@@ -1,0 +1,17 @@
+LIBRARY divaslider
+
+EXPORTS
+    diva_io_get_api_version
+    diva_io_jvs_init
+    diva_io_jvs_poll
+    diva_io_jvs_read_coin_counter
+    diva_io_slider_init
+    diva_io_slider_start
+    diva_io_slider_stop
+    diva_io_slider_set_leds
+    diva_io_led_init
+    diva_io_led_set_leds
+    diva_io_touch_init
+    diva_io_touch_start
+    diva_io_touch_stop
+
