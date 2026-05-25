@@ -1,16 +1,18 @@
 # DIVA Slider
 
-[中文文档](README.zh-CN.md)
 
-DIVA Slider is a phone and browser based input bridge for Project DIVA Arcade style setups.
-It provides a 32-cell touch slider, cabinet buttons, coin pulses, and LED feedback without
-modifying game files.
+
+This project is a phone and browser based input for Project DIVA Arcade,which provides a 32-cell touch slider, cabinet buttons and LED feedback without modifying game files.
 
 This repository **does not** include game files, Segatools, or PDLoader binaries.
 
+本项目是一个面向 Project DIVA Arcade 的手机和浏览器滑条模拟器
+，提供 32 格触摸滑条、机台按钮灯光反馈，不需要修改游戏文件，项目灵感来源于[brokenithm](https://github.com/tindy2013/Brokenithm-Android)
+
+本仓库 **不包含** 游戏文件、Segatools 或 PDLoader 二进制文件，中文文档[请移步](README.zh-CN.md)
 ## Features
 
-- 32-cell slider pressure input that simulates the arcade slider's behavior.
+- 32-cell slider input that simulates the arcade slider's behavior.
 - Circle, Cross, Square, Triangle, Start, Test, Service, and Coin input.
 - Browser panel with live slider/button LED display.
 - Android app with UDP/WebSocket modes and live LED feedback.
@@ -20,14 +22,6 @@ This repository **does not** include game files, Segatools, or PDLoader binaries
 
 Download the latest release package then extract it
 use the included server, DLL, and Android APK.
-
-Expected release files:
-
-```text
-divaslider-server.exe
-divaslider.dll
-DIVA-Slider.apk
-```
 
 1. Configure Segatools/divahook to load the DLL:
 
@@ -54,11 +48,9 @@ Use `--debug` only when you need verbose input state logs:
 - Android WebSocket: PC IP, port `52469`.
 - Browser client: `http://127.0.0.1:52469/`.
 
-Only one active input sender should be enabled at a time. The browser page defaults to
-`INPUT OFF`, so it can be left open for LED display without fighting the Android app.
+Only one active input sender should be enabled at a time. The browser page defaults to `INPUT OFF`
 
-## PDLoader / TLAC Notes
-
+## PDLoader / TLAC
 For PDLoader/TLAC setups, the DLL's TLAC path is designed to write input after TLAC's own
 per-frame input refresh. Use these settings so TLAC does not overwrite this bridge:
 
@@ -70,11 +62,6 @@ touch_slider_emulator = false
 ; plugins/config.ini
 hardware_slider = 1
 ```
-
-`hardware_slider = 1` keeps the original hardware slider flow alive. The DLL then behaves like a real slider backend rather than a keyboard emulator.
-
-
-
 ## Default Ports
 
 - UDP input: `52468`
@@ -138,10 +125,10 @@ http://127.0.0.1:52469/debug/slider?cell=16&pressure=80&ms=5000
 
 ```text
 .
-+-- App/      Android controller app
-+-- Dll/      Segatools/divahook-compatible divaio DLL
-+-- Server/   Go input server and browser debug client
-`-- Resource/ Local-only references/dependencies, ignored by git
+App/      Android controller app
+Dll/      Segatools/divahook-compatible divaio DLL
+Server/   Go input server and browser debug client
+Resource/ Local-only references/dependencies, ignored by git
 ```
 
 ## Build Requirements
