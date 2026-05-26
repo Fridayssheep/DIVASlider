@@ -52,3 +52,4 @@ App/.kotlin/
 *.iobj
 *.ipdb
 *.dll
+*.jks
