@@ -9,7 +9,7 @@
 
 ## 功能
 
-- 模拟街机滑条行为的 32 格滑条输入。
+- 支持 DLL/TLAC 路径和摇杆模拟模式的触摸滑条输入。
 - Circle、Cross、Square、Triangle、Start、Test、Service 和 Coin 输入。
 - 带实时滑条/按钮灯光显示的浏览器面板。
 - 支持 UDP/WebSocket 和实时灯光反馈的 Android App。

@@ -4,6 +4,7 @@ Resource/
 # IDE/editor state.
 .idea/
 .vscode/
+.vs/
 *.iml
 *.suo
 *.user
@@ -27,6 +28,9 @@ divaslider-dll.log
 # Build output directories.
 build/
 **/build/
+DivaSliderDesktop/frontend/dist/
+DivaSliderDesktop/frontend/node_modules/
+DivaSliderDesktop/frontend/package.json.md5
 
 # Go cache/test output and local server binaries.
 .gocache/

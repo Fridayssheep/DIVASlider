@@ -12,7 +12,7 @@ This repository **does not** include game files, Segatools, or PDLoader binaries
 本仓库 **不包含** 游戏文件、Segatools 或 PDLoader 二进制文件，中文文档[请移步](README.zh-CN.md)
 ## Features
 
-- 32-cell slider input that simulates the arcade slider's behavior.
+- Touch slider input for the DLL/TLAC path and joystick-slider mode.
 - Circle, Cross, Square, Triangle, Start, Test, Service, and Coin input.
 - Browser panel with live slider/button LED display.
 - Android app with UDP/WebSocket modes and live LED feedback.

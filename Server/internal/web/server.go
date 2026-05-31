@@ -43,6 +43,10 @@ type statusLEDs struct {
 }
 
 func (s *Server) ListenAndServe() error {
+	return http.ListenAndServe(s.Addr, s.Handler())
+}
+
+func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.handleIndex)
 	mux.HandleFunc("/ws", s.handleWebSocket)
@@ -51,11 +55,7 @@ func (s *Server) ListenAndServe() error {
 	mux.HandleFunc("/debug/slider", s.handleDebugSlider)
 	mux.HandleFunc("/debug/led", s.handleDebugLED)
 
-	if s.Logger != nil {
-		s.Logger.Printf("http listening on %s", s.Addr)
-	}
-
-	return http.ListenAndServe(s.Addr, mux)
+	return mux
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
