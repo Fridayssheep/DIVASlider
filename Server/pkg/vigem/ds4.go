@@ -8,7 +8,11 @@ import (
 )
 
 const (
-	ds4DpadNone = 0x08
+	ds4DpadUp    = 0x00
+	ds4DpadRight = 0x02
+	ds4DpadDown  = 0x04
+	ds4DpadLeft  = 0x06
+	ds4DpadNone  = 0x08
 
 	ds4ButtonSquare   uint16 = 1 << 4
 	ds4ButtonCross    uint16 = 1 << 5
@@ -38,17 +42,21 @@ func DS4ReportFromSnapshot(snapshot state.Snapshot, axes mega39.StickAxes) DS4Re
 		Buttons: ds4DpadNone,
 	}
 
-	if snapshot.Buttons&state.ButtonSquare != 0 {
-		report.Buttons |= ds4ButtonSquare
-	}
-	if snapshot.Buttons&state.ButtonCross != 0 {
-		report.Buttons |= ds4ButtonCross
-	}
-	if snapshot.Buttons&state.ButtonCircle != 0 {
-		report.Buttons |= ds4ButtonCircle
-	}
-	if snapshot.Buttons&state.ButtonTriangle != 0 {
-		report.Buttons |= ds4ButtonTriangle
+	if snapshot.Buttons&state.ButtonNav != 0 {
+		report.Buttons = (report.Buttons &^ 0x0f) | dpadFromButtons(snapshot.Buttons)
+	} else {
+		if snapshot.Buttons&state.ButtonSquare != 0 {
+			report.Buttons |= ds4ButtonSquare
+		}
+		if snapshot.Buttons&state.ButtonCross != 0 {
+			report.Buttons |= ds4ButtonCross
+		}
+		if snapshot.Buttons&state.ButtonCircle != 0 {
+			report.Buttons |= ds4ButtonCircle
+		}
+		if snapshot.Buttons&state.ButtonTriangle != 0 {
+			report.Buttons |= ds4ButtonTriangle
+		}
 	}
 	if snapshot.Buttons&state.ButtonStart != 0 {
 		report.Buttons |= ds4ButtonOptions
@@ -58,6 +66,21 @@ func DS4ReportFromSnapshot(snapshot state.Snapshot, axes mega39.StickAxes) DS4Re
 	}
 
 	return report
+}
+
+func dpadFromButtons(buttons uint16) uint16 {
+	switch {
+	case buttons&state.ButtonTriangle != 0:
+		return ds4DpadUp
+	case buttons&state.ButtonCircle != 0:
+		return ds4DpadRight
+	case buttons&state.ButtonCross != 0:
+		return ds4DpadDown
+	case buttons&state.ButtonSquare != 0:
+		return ds4DpadLeft
+	default:
+		return ds4DpadNone
+	}
 }
 
 func (r DS4Report) Bytes() []byte {

@@ -14,6 +14,7 @@ const (
 	ButtonTest
 	ButtonService
 	ButtonCoin
+	ButtonNav
 )
 
 const Timeout = 2 * time.Second

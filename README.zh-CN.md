@@ -76,9 +76,10 @@ hardware_slider = 1
 0x20 Test
 0x40 Service
 0x80 Coin pulse
+0x100 Nav layer
 ```
 
-Test 和 Service 在客户端中按街机逻辑处理为短脉冲。Start 和四个游戏按钮支持正常长按。
+Test 和 Service 在客户端中按街机逻辑处理为短脉冲。Start 和四个游戏按钮支持正常长按。Nav layer 仅用于摇杆模拟模式：按住 NAV 时，Triangle/Square/Cross/Circle 会临时映射为 DS4 上/左/下/右方向键。
 
 ## Android App
 

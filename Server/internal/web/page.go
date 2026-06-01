@@ -53,7 +53,7 @@ main::before { content:""; position:absolute; inset:0; background:linear-gradien
 #lockButton { left:10px; width:56px; }
 #handleButton { left:50%; width:142px; transform:translateX(-50%); }
 #buttonPanel.locked #handleButton { display:none; }
-#buttonGrid { position:absolute; inset:22px 10px 10px 10px; display:grid; grid-template-columns:1fr 1fr 1fr 1fr minmax(58px, .72fr); gap:18px; align-items:center; opacity:0; transform:translateY(10px); transition:opacity 180ms ease, transform 180ms ease; pointer-events:none; }
+#buttonGrid { position:absolute; inset:22px 10px 10px 10px; display:grid; grid-template-columns:repeat(4, 1fr); gap:18px; align-items:center; opacity:0; transform:translateY(10px); transition:opacity 180ms ease, transform 180ms ease; pointer-events:none; }
 #buttonPanel.expanded #buttonGrid { opacity:1; transform:translateY(0); pointer-events:auto; }
 .game-button { width:min(100%, 220px); height:min(100%, 220px); border:0; background:transparent; color:var(--text); position:relative; min-width:0; min-height:0; padding:0; touch-action:none; justify-self:center; align-self:center; }
 .game-button .shape { position:absolute; left:50%; top:50%; width:92%; height:92%; transform:translate(-50%, -50%); overflow:visible; filter:drop-shadow(0 0 10px var(--btn-color)); opacity:.72; }
@@ -63,19 +63,25 @@ main::before { content:""; position:absolute; inset:0; background:linear-gradien
 .game-button .shape .inner { stroke-width:8; opacity:.58; }
 .game-button.down .shape .outer, .game-button.lit .shape .outer { opacity:.85; }
 .game-button.down .shape .inner, .game-button.lit .shape .inner { opacity:1; }
-.side-buttons { display:grid; grid-template-rows:repeat(4, 1fr); gap:8px; min-height:0; height:100%; justify-items:center; align-items:center; grid-column:5; grid-row:1; }
-.side-button { width:min(100%, 72px); height:min(100%, 72px); border:3px solid rgba(148,163,184,.42); border-radius:999px; background:rgba(15,23,42,.54); color:rgba(236,254,255,.7); min-height:0; font-size:10px; font-weight:700; touch-action:none; padding:0; }
-.side-button.coin { border-color:rgba(241,198,75,.5); color:rgba(241,198,75,.74); }
-.side-button.service { border-color:rgba(94,234,212,.45); color:rgba(236,254,255,.78); }
-.side-button.down { color:#fff; border-color:rgba(255,255,255,.65); box-shadow:inset 0 0 0 999px rgba(255,255,255,.1), 0 0 18px rgba(255,255,255,.18); }
-.side-button.coin.down { border-color:rgba(241,198,75,.9); box-shadow:0 0 18px rgba(241,198,75,.35); }
+.tool-menu { position:absolute; right:12px; bottom:12px; width:64px; height:64px; --menu-size:64px; --side-size:64px; z-index:8; opacity:0; transform:scale(.84); transition:opacity 180ms ease, transform 180ms ease; pointer-events:none; overflow:visible; }
+#buttonPanel.expanded .tool-menu { opacity:1; transform:scale(1); pointer-events:auto; }
+.tool-menu-button,
+.side-button { position:absolute; border:3px solid rgba(148,163,184,.42); border-radius:999px; background:rgba(15,23,42,.76); color:rgba(236,254,255,.82); min-height:0; font-size:10px; font-weight:900; touch-action:none; padding:0; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(0,0,0,.28); }
+.tool-menu-button { right:0; bottom:0; width:100%; height:100%; border-color:rgba(94,234,212,.66); color:#041018; background:rgba(94,234,212,.94); font-size:13px; z-index:2; }
+.side-button { right:calc((var(--menu-size) - var(--side-size)) / 2); bottom:calc((var(--menu-size) - var(--side-size)) / 2); width:var(--side-size); height:var(--side-size); border-color:rgba(var(--tool-rgb, 148,163,184), .58); color:rgba(var(--tool-rgb, 236,254,255), .92); opacity:0; transform:translate(var(--tx), var(--ty)) scale(.6); transition:opacity 210ms ease, transform 240ms cubic-bezier(.2,.9,.2,1.1), background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease; pointer-events:none; }
+.tool-menu.open .side-button { opacity:1; pointer-events:auto; transform:translate(var(--tx), var(--ty)) scale(1); }
+.tool-menu.closing .side-button { opacity:0; pointer-events:none; transform:translate(0, 0) scale(.6); transition:opacity 180ms ease, transform 200ms ease; }
+.side-button.down { color:#fff; border-color:rgba(var(--tool-rgb, 255,255,255), .95); background:rgba(var(--tool-rgb, 255,255,255), .22); box-shadow:inset 0 0 0 999px rgba(255,255,255,.08), 0 0 20px rgba(var(--tool-rgb, 255,255,255), .42); }
 button { cursor:pointer; letter-spacing:0; }
 @media (max-width: 720px) {
   .status-chip { left:10px; top:10px; padding:0 12px; }
   .input-toggle { right:10px; top:10px; padding:0 12px; }
   #buttonPanel { left:10px; right:10px; }
   #buttonPanel.expanded { height:min(40vh, 260px); }
-  #buttonGrid { grid-template-columns:1fr 1fr 1fr 1fr 58px; gap:10px; }
+  #buttonGrid { grid-template-columns:repeat(4, 1fr); gap:10px; }
+  .tool-menu { width:58px; height:58px; --menu-size:58px; --side-size:58px; }
+  .tool-menu-button { font-size:12px; }
+  .side-button { font-size:9px; }
 }
 </style>
 </head>
@@ -94,6 +100,9 @@ button { cursor:pointer; letter-spacing:0; }
     <button id="lockButton" class="panel-tool tap-fill">LOCK</button>
     <button id="handleButton" class="panel-tool tap-fill">SHOW BUTTONS</button>
     <div id="buttonGrid"></div>
+    <div id="toolMenu" class="tool-menu">
+      <button id="toolMenuButton" class="tool-menu-button tap-fill">MENU</button>
+    </div>
   </section>
 </main>
 <script>
@@ -104,7 +113,8 @@ const BUTTONS = {
   triangle: 8,
   start: 16,
   test: 32,
-  service: 64
+  service: 64,
+  nav: 256
 };
 const gameDefs = [
   { id:"triangle", bit:BUTTONS.triangle, cls:"tri", color:"#86f6cf" },
@@ -121,6 +131,8 @@ const statusText = document.getElementById("statusText");
 const inputToggle = document.getElementById("inputToggle");
 const handleButton = document.getElementById("handleButton");
 const lockButton = document.getElementById("lockButton");
+const toolMenu = document.getElementById("toolMenu");
+const toolMenuButton = document.getElementById("toolMenuButton");
 const cells = [];
 const buttonElements = new Map();
 let ws;
@@ -130,6 +142,7 @@ let activePointers = new Map();
 let panelExpanded = false;
 let panelLocked = false;
 let inputEnabled = false;
+let toolMenuOpen = false;
 
 for (let i = 0; i < 32; i++) {
   const cell = document.createElement("div");
@@ -148,36 +161,31 @@ for (const def of gameDefs) {
   wireHoldButton(button, def.bit);
 }
 
-const side = document.createElement("div");
-side.className = "side-buttons";
-buttonGrid.appendChild(side);
+const toolButtons = [
+  { label:"TEST", bit:BUTTONS.test, kind:"pulse", rgb:"94,234,212" },
+  { label:"SERVICE", bit:BUTTONS.service, kind:"pulse", rgb:"94,234,212" },
+  { label:"COIN", bit:0, kind:"coin", rgb:"241,198,75" },
+  { label:"NAV", bit:BUTTONS.nav, kind:"hold", rgb:"56,189,248" }
+];
 
-const testButton = makeSideButton("TEST", "service");
-side.appendChild(testButton);
-buttonElements.set(BUTTONS.test, testButton);
-wirePulseButton(testButton, BUTTONS.test);
+for (const def of toolButtons) {
+  const button = makeSideButton(def.label, def.rgb);
+  toolMenu.appendChild(button);
+  if (def.bit) buttonElements.set(def.bit, button);
+  if (def.kind === "coin") {
+    wireCoinButton(button);
+  } else if (def.kind === "pulse") {
+    wirePulseButton(button, def.bit);
+  } else {
+    wireHoldButton(button, def.bit);
+  }
+}
+layoutToolMenu();
 
-const serviceButton = makeSideButton("SERVICE", "service");
-side.appendChild(serviceButton);
-buttonElements.set(BUTTONS.service, serviceButton);
-wirePulseButton(serviceButton, BUTTONS.service);
-
-const startButton = document.createElement("button");
-startButton.className = "side-button tap-fill";
-startButton.textContent = "START";
-side.appendChild(startButton);
-buttonElements.set(BUTTONS.start, startButton);
-wireHoldButton(startButton, BUTTONS.start);
-
-const coinButton = document.createElement("button");
-coinButton.className = "side-button coin tap-fill";
-coinButton.textContent = "COIN";
-side.appendChild(coinButton);
-wireCoinButton(coinButton);
-
-function makeSideButton(label, extraClass) {
+function makeSideButton(label, rgb) {
   const button = document.createElement("button");
-  button.className = "side-button " + extraClass + " tap-fill";
+  button.className = "side-button tap-fill";
+  button.style.setProperty("--tool-rgb", rgb);
   button.textContent = label;
   return button;
 }
@@ -242,6 +250,22 @@ lockButton.addEventListener("click", e => {
   updatePanel();
 });
 
+toolMenuButton.addEventListener("click", e => {
+  flashTap(toolMenuButton, e);
+  if (!inputEnabled) return;
+  if (toolMenuOpen) {
+    toolMenu.classList.add("closing");
+    setTimeout(() => {
+      toolMenuOpen = false;
+      toolMenu.classList.remove("closing");
+      updateToolMenu();
+    }, 200);
+  } else {
+    toolMenuOpen = true;
+    updateToolMenu();
+  }
+});
+
 inputToggle.addEventListener("click", e => {
   flashTap(inputToggle, e);
   inputEnabled = !inputEnabled;
@@ -253,10 +277,12 @@ inputToggle.addEventListener("click", e => {
 });
 
 function updatePanel() {
+  if (!panelExpanded) toolMenuOpen = false;
   buttonPanel.classList.toggle("expanded", panelExpanded);
   buttonPanel.classList.toggle("locked", panelLocked);
   lockButton.textContent = panelLocked ? "UNLOCK" : "LOCK";
   handleButton.textContent = panelExpanded ? "HIDE BUTTONS" : "SHOW BUTTONS";
+  updateToolMenu();
 }
 
 function updateInputToggle() {
@@ -268,8 +294,52 @@ function clearLocalInput() {
   buttons = 0;
   activePointers.clear();
   pressure.fill(0);
+  toolMenuOpen = false;
   for (const cell of cells) cell.classList.remove("on");
   for (const button of buttonElements.values()) button.classList.remove("down");
+  updateToolMenu();
+}
+
+function updateToolMenu() {
+  layoutToolMenu();
+  toolMenu.classList.toggle("open", toolMenuOpen && inputEnabled && panelExpanded);
+}
+
+function layoutToolMenu() {
+  const items = Array.from(toolMenu.querySelectorAll(".side-button"));
+  if (!items.length) return;
+  const menuRect = toolMenuButton.getBoundingClientRect();
+  const panelRect = buttonPanel.getBoundingClientRect();
+  const topControlsBottom = Math.max(statusEl.getBoundingClientRect().bottom, inputToggle.getBoundingClientRect().bottom) + 14;
+  const viewportInset = 10;
+  const menuSize = menuRect.width || parseFloat(getComputedStyle(toolMenu).width) || 64;
+  const preferredSize = window.matchMedia("(max-width: 720px)").matches ? 58 : 64;
+  const size = Math.max(52, Math.min(preferredSize, Math.max(0, panelRect.height - 18)));
+  const maxUp = Math.max(0, menuRect.top - topControlsBottom - size / 2);
+  const maxLeft = Math.max(0, menuRect.left - viewportInset - size / 2);
+  const count = items.length;
+  const preferredStep = size + 8;
+  const minStep = size + 2;
+
+  let verticalStep = count > 0 ? Math.min(preferredStep, maxUp / count) : preferredStep;
+  if (verticalStep >= minStep) {
+    verticalStep = Math.max(minStep, verticalStep);
+    items.forEach((button, index) => {
+      button.style.setProperty("--tx", "0px");
+      button.style.setProperty("--ty", (-verticalStep * (index + 1)) + "px");
+    });
+  } else {
+    const compressedStep = count > 0 ? maxUp / count : 0;
+    const neededX = Math.sqrt(Math.max(minStep * minStep - compressedStep * compressedStep, 0));
+    const xStep = Math.min(neededX, count > 0 ? maxLeft / count : neededX);
+    items.forEach((button, index) => {
+      button.style.setProperty("--tx", (-xStep * (index + 1)) + "px");
+      button.style.setProperty("--ty", (-compressedStep * (index + 1)) + "px");
+    });
+  }
+
+  toolMenu.style.setProperty("--menu-size", menuSize + "px");
+  toolMenu.style.setProperty("--side-size", size + "px");
 }
 
 function wireHoldButton(button, bit) {
@@ -426,6 +496,7 @@ updatePanel();
 updateInputToggle();
 setInterval(() => send(), 50);
 setInterval(pollStatus, 80);
+window.addEventListener("resize", layoutToolMenu);
 connect();
 pollStatus();
 </script>

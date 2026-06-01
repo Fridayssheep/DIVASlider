@@ -6,6 +6,8 @@ import {runner} from '../models';
 
 export function DefaultConfig(arg1:string):Promise<inputmethod.Config>;
 
+export function GetLogs():Promise<Array<string>>;
+
 export function InputMethods():Promise<Array<inputmethod.Info>>;
 
 export function MethodRequirement(arg1:string):Promise<main.MethodRequirement>;

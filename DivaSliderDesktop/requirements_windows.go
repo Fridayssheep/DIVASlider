@@ -27,6 +27,18 @@ func checkJoystickRequirement() MethodRequirement {
 
 	stateName, err := vigemBusServiceState()
 	if err != nil {
+		// 检查是否是权限问题
+		if isAccessDeniedError(err) {
+			return MethodRequirement{
+				MethodID: "joystick-slider",
+				OK:       false,
+				Severity: "error",
+				Title:    "权限不足",
+				Message:  "无法访问 ViGEmBus 服务，可能是因为程序没有以管理员权限运行。",
+				Detail:   err.Error(),
+				Action:   "请右键点击程序，选择\"以管理员身份运行\"，然后重新选择摇杆模拟滑动。",
+			}
+		}
 		return MethodRequirement{
 			MethodID: "joystick-slider",
 			OK:       false,
@@ -34,7 +46,7 @@ func checkJoystickRequirement() MethodRequirement {
 			Title:    "未检测到 ViGEmBus 驱动",
 			Message:  "摇杆模拟需要系统安装并运行 ViGEmBus 驱动，否则无法创建 DS4 虚拟手柄。",
 			Detail:   err.Error(),
-			Action:   "请先安装 ViGEmBus，然后重新打开本程序或重新选择摇杆模拟滑动。",
+			Action:   "请先安装 ViGEmBus 驱动（https://github.com/ViGEm/ViGEmBus/releases），然后重新打开本程序。",
 		}
 	}
 	if stateName != "Running" {
@@ -138,4 +150,14 @@ func projectDLLCandidates(start string) []string {
 		}
 		dir = parent
 	}
+}
+
+func isAccessDeniedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// Windows 访问拒绝错误通常包含错误码 5 (ERROR_ACCESS_DENIED)
+	return syscall.Errno(5) == errors.Unwrap(err) ||
+		errors.Is(err, syscall.ERROR_ACCESS_DENIED) ||
+		errors.Is(err, os.ErrPermission)
 }

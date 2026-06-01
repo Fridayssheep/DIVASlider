@@ -115,7 +115,7 @@ func (r *Runner) Start() error {
 	}
 
 	r.logger.Printf("input_method=%s http=%s udp=%s", r.cfg.ID, r.cfg.HTTPAddr, r.cfg.UDPAddr)
-	r.logger.Printf("button bits: circle=0x01 cross=0x02 square=0x04 triangle=0x08 start=0x10 test=0x20 service=0x40 coin=0x80")
+	r.logger.Printf("button bits: circle=0x01 cross=0x02 square=0x04 triangle=0x08 start=0x10 test=0x20 service=0x40 coin=0x80 nav=0x100")
 	return nil
 }
 

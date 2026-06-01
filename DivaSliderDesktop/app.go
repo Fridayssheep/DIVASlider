@@ -18,10 +18,14 @@ type App struct {
 	mu      sync.Mutex
 	current *runner.Runner
 	cfg     inputmethod.Config
+	logChan chan string
 }
 
 func NewApp() *App {
-	return &App{cfg: inputmethod.Default(inputmethod.MethodTLAC)}
+	return &App{
+		cfg:     inputmethod.Default(inputmethod.MethodTLAC),
+		logChan: make(chan string, 100),
+	}
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -71,7 +75,7 @@ func (a *App) Start(cfg inputmethod.Config) (runner.Status, error) {
 		}()
 	}
 
-	app, err := runner.New(normalized, log.New(logWriter{}, "", 0))
+	app, err := runner.New(normalized, log.New(&logWriter{a}, "", 0))
 	if err != nil {
 		return runner.Status{}, err
 	}
@@ -131,9 +135,39 @@ func (a *App) OpenWebInput() error {
 	return openURL(status.HTTPURL)
 }
 
-type logWriter struct{}
+func (a *App) GetLogs() []string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
 
-func (logWriter) Write(p []byte) (int, error) {
+	var logs []string
+	for {
+		select {
+		case msg := <-a.logChan:
+			logs = append(logs, msg)
+		default:
+			return logs
+		}
+	}
+}
+
+type logWriter struct {
+	app *App
+}
+
+func (w *logWriter) Write(p []byte) (int, error) {
+	if w.app != nil && w.app.logChan != nil {
+		msg := string(p)
+		select {
+		case w.app.logChan <- msg:
+		default:
+			// 通道满了，丢弃旧日志
+			select {
+			case <-w.app.logChan:
+			default:
+			}
+			w.app.logChan <- msg
+		}
+	}
 	return len(p), nil
 }
 

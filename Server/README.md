@@ -67,6 +67,7 @@ Button bits:
 - `0x20` Test
 - `0x40` Service
 - `0x80` Coin pulse
+- `0x100` Nav layer, used by joystick slider mode to map shape buttons to DS4 D-pad
 
 ## Shared Memory Layout
 

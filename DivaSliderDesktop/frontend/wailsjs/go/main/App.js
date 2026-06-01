@@ -6,6 +6,10 @@ export function DefaultConfig(arg1) {
   return window['go']['main']['App']['DefaultConfig'](arg1);
 }
 
+export function GetLogs() {
+  return window['go']['main']['App']['GetLogs']();
+}
+
 export function InputMethods() {
   return window['go']['main']['App']['InputMethods']();
 }

@@ -79,10 +79,13 @@ hardware_slider = 1
 0x20 Test
 0x40 Service
 0x80 Coin pulse
+0x100 Nav layer
 ```
 
 Test and Service are treated as short arcade-style pulses by the clients. Start and the
-four game buttons support normal hold behavior.
+four game buttons support normal hold behavior. Nav layer is used only by joystick
+slider mode: while NAV is held, Triangle/Square/Cross/Circle map to DS4
+Up/Left/Down/Right.
 
 ## Android App
 
