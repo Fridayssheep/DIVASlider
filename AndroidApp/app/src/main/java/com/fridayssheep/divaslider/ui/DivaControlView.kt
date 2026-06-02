@@ -17,7 +17,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.animation.DecelerateInterpolator
-import com.fridayssheep.divaslider.input.BUTTON_COIN
 import com.fridayssheep.divaslider.input.BUTTON_CIRCLE
 import com.fridayssheep.divaslider.input.BUTTON_CROSS
 import com.fridayssheep.divaslider.input.BUTTON_NAV
@@ -62,6 +61,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
         PadButton("X", BUTTON_CROSS, Color.rgb(80, 139, 255)),
         PadButton("O", BUTTON_CIRCLE, Color.rgb(255, 115, 129))
     )
+    private val startButton = PadButton("START", BUTTON_START, Color.rgb(250, 204, 21))
     private val toolButtons = listOf(
         ToolButton("TEST", BUTTON_TEST, Color.rgb(94, 234, 212), pulse = true, offsetX = 0, offsetY = -70),
         ToolButton("SERVICE", BUTTON_SERVICE, Color.rgb(94, 234, 212), pulse = true, offsetX = 0, offsetY = -140),
@@ -85,6 +85,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
     private var panelHeightRatio = 0f
     private var expandAnimator: android.animation.ValueAnimator? = null
     private var panelLocked = false
+    private val toolHighlightUntil = HashMap<String, Long>()
     private var handlePointerId = -1
     private var lockPointerId = -1
     private var handleDownX = 0f
@@ -412,6 +413,10 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
             if (handledTool) continue
 
             if (expandProgress > 0f && buttonRect.contains(pointer.x, pointer.y)) {
+                if (startButton.rect.contains(pointer.x, pointer.y)) {
+                    buttonMask = buttonMask or startButton.bit
+                    continue
+                }
                 for (button in buttons) {
                     if (!button.pulseCoin && button.rect.contains(pointer.x, pointer.y)) {
                         buttonMask = buttonMask or button.bit
@@ -444,17 +449,25 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
                 return true
             }
             if (button.pulseCoin && button.rect.contains(x, y)) {
+                flashToolButton(button)
                 input.pulseCoin()
                 return true
             }
             if (button.pulse && button.rect.contains(x, y)) {
+                flashToolButton(button)
                 val heldButtons = if (navEnabled) BUTTON_NAV else 0
                 input.update(heldButtons or button.bit, ByteArray(32))
-                postDelayed({ rebuildInput() }, 70L)
+                postDelayed({ rebuildInput() }, 120L)
                 return true
             }
         }
         return false
+    }
+
+    private fun flashToolButton(button: ToolButton) {
+        toolHighlightUntil[button.label] = SystemClock.uptimeMillis() + 120L
+        invalidate()
+        postDelayed({ invalidate() }, 140L)
     }
 
     private fun layoutRects() {
@@ -479,11 +492,12 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
         if (expandProgress == 0f) {
             for (button in buttons) button.rect.setEmpty()
             for (button in toolButtons) button.rect.setEmpty()
+            startButton.rect.setEmpty()
             menuRect.setEmpty()
             return
         }
 
-        val menuDiameter = min(dp(66), buttonRect.height() * 0.46f)
+        val menuDiameter = min(dp(54), buttonRect.height() * 0.40f)
         menuRect.set(
             buttonRect.right - menuDiameter - dp(12),
             buttonRect.bottom - menuDiameter - dp(12),
@@ -492,11 +506,21 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
         )
 
         val mainAreaWidth = menuRect.left - buttonRect.left - gap
+        val startSize = menuDiameter
+        val startLeft = buttonRect.right - dp(12) - startSize
+        val startTop = buttonRect.top + dp(12)
+        startButton.rect.set(
+            startLeft,
+            startTop,
+            startLeft + startSize,
+            startTop + startSize
+        )
+
         val diameter = min((mainAreaWidth - gap * 3f) / 4f, buttonRect.height() * 0.72f)
         val top = buttonRect.centerY() - diameter / 2f + dp(8)
-        val startLeft = buttonRect.left + (mainAreaWidth - diameter * 4f - gap * 3f) / 2f
+        val buttonsLeft = buttonRect.left + (mainAreaWidth - diameter * 4f - gap * 3f) / 2f
         for (i in 0 until 4) {
-            val left = startLeft + i * (diameter + gap)
+            val left = buttonsLeft + i * (diameter + gap)
             buttons[i].rect.set(left, top, left + diameter, top + diameter)
         }
 
@@ -711,6 +735,9 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
                     buttonMask = buttonMask or button.bit
                 }
             }
+            if (startButton.rect.contains(pointer.x, pointer.y)) {
+                buttonMask = buttonMask or startButton.bit
+            }
         }
 
         if (expandProgress == 0f) {
@@ -743,6 +770,11 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
             paint.style = Paint.Style.FILL
             paint.color = Color.argb((120 * expandProgress).toInt().coerceIn(0, 255), 4, 8, 14)
             canvas.drawCircle(cx, cy, radius * 0.9f, paint)
+            if (led > 0) {
+                val fillAlpha = (52f * (led / 255f) * expandProgress).toInt().coerceIn(0, 52)
+                paint.color = Color.argb(fillAlpha, Color.red(button.baseColor), Color.green(button.baseColor), Color.blue(button.baseColor))
+                canvas.drawCircle(cx, cy, radius * 0.9f, paint)
+            }
 
             paint.style = Paint.Style.STROKE
             paint.strokeJoin = Paint.Join.ROUND
@@ -853,23 +885,66 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
             }
         }
 
+        drawStartButton(canvas, (buttonMask and BUTTON_START) != 0)
         drawToolMenu(canvas, buttonMask)
+    }
+
+    private fun drawStartButton(canvas: Canvas, active: Boolean) {
+        if (startButton.rect.isEmpty) return
+        val alpha = (expandProgress * 255).toInt().coerceIn(0, 255)
+        val radius = startButton.rect.width() / 2f
+
+        paint.style = Paint.Style.FILL
+        paint.color = if (active) {
+            Color.argb(220 * alpha / 255, Color.red(startButton.baseColor), Color.green(startButton.baseColor), Color.blue(startButton.baseColor))
+        } else {
+            Color.argb(118 * alpha / 255, 4, 8, 14)
+        }
+        canvas.drawCircle(startButton.rect.centerX(), startButton.rect.centerY(), radius, paint)
+
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = dp(2)
+        paint.color = Color.argb(
+            (if (active) 245 else 205) * alpha / 255,
+            Color.red(startButton.baseColor),
+            Color.green(startButton.baseColor),
+            Color.blue(startButton.baseColor)
+        )
+        canvas.drawCircle(startButton.rect.centerX(), startButton.rect.centerY(), radius - dp(1), paint)
+
+        paint.style = Paint.Style.FILL
+        paint.textAlign = Paint.Align.CENTER
+        paint.typeface = Typeface.DEFAULT_BOLD
+        paint.textSize = 11f * resources.displayMetrics.scaledDensity
+        paint.color = if (active) {
+            Color.argb(alpha, 4, 16, 24)
+        } else {
+            Color.argb(alpha, Color.red(startButton.baseColor), Color.green(startButton.baseColor), Color.blue(startButton.baseColor))
+        }
+        canvas.drawText(startButton.label, startButton.rect.centerX(), startButton.rect.centerY() + paint.textSize * 0.35f, paint)
     }
 
     private fun drawToolMenu(canvas: Canvas, buttonMask: Int) {
         if (menuRect.isEmpty) return
 
+        val menuRadius = menuRect.width() / 2f
         paint.style = Paint.Style.FILL
-        paint.color = if (toolMenuOpen) Color.argb(238, 94, 234, 212) else Color.argb(222, 94, 234, 212)
-        canvas.drawCircle(menuRect.centerX(), menuRect.centerY(), menuRect.width() / 2f, paint)
+        paint.color = if (toolMenuOpen) Color.argb(220, 94, 234, 212) else Color.argb(118, 4, 8, 14)
+        canvas.drawCircle(menuRect.centerX(), menuRect.centerY(), menuRadius, paint)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = dp(2)
+        paint.color = Color.argb(if (toolMenuOpen) 245 else 205, 94, 234, 212)
+        canvas.drawCircle(menuRect.centerX(), menuRect.centerY(), menuRadius - dp(1), paint)
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = Typeface.DEFAULT_BOLD
-        paint.textSize = 13f * resources.displayMetrics.scaledDensity
-        paint.color = Color.rgb(4, 16, 24)
+        paint.style = Paint.Style.FILL
+        paint.textSize = 11f * resources.displayMetrics.scaledDensity
+        paint.color = if (toolMenuOpen) Color.rgb(4, 16, 24) else Color.rgb(94, 234, 212)
         canvas.drawText("MENU", menuRect.centerX(), menuRect.centerY() + paint.textSize * 0.34f, paint)
 
         if (toolMenuProgress == 0f) return
 
+        val now = SystemClock.uptimeMillis()
         for (button in toolButtons) {
             if (button.rect.isEmpty) continue
             val active = !button.pulseCoin && !button.pulse && (buttonMask and button.bit) != 0
@@ -879,7 +954,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
 
             val alpha = (toolMenuProgress * 255).toInt().coerceIn(0, 255)
 
-            val pressed = active
+            val pressed = active || isToolButtonHighlighted(button, now)
 
             paint.style = Paint.Style.FILL
             paint.color = Color.argb((if (pressed) 230 else 176) * alpha / 255, 4, 8, 14)
@@ -908,6 +983,13 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
             }
             canvas.drawText(button.label, cx, cy + paint.textSize * 0.35f, paint)
         }
+    }
+
+    private fun isToolButtonHighlighted(button: ToolButton, now: Long): Boolean {
+        val until = toolHighlightUntil[button.label] ?: return false
+        if (now <= until) return true
+        toolHighlightUntil.remove(button.label)
+        return false
     }
 
     private fun sliderLedColor(cell: Int): Int {

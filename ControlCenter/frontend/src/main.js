@@ -23,6 +23,41 @@ const iconsToPreload = [
 
 loadIcons(iconsToPreload);
 
+function disableWebViewZoom() {
+  const zoomKeys = new Set(['+', '-', '=', '_', '0']);
+  const zoomCodes = new Set([
+    'Equal',
+    'Minus',
+    'Digit0',
+    'NumpadAdd',
+    'NumpadSubtract',
+    'Numpad0',
+  ]);
+
+  const stopZoom = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  window.addEventListener('wheel', (event) => {
+    if (event.ctrlKey) {
+      stopZoom(event);
+    }
+  }, { passive: false, capture: true });
+
+  window.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && (zoomKeys.has(event.key) || zoomCodes.has(event.code))) {
+      stopZoom(event);
+    }
+  }, { capture: true });
+
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => {
+    window.addEventListener(type, stopZoom, { passive: false, capture: true });
+  });
+}
+
+disableWebViewZoom();
+
 const state = {
   methods: [],
   cfg: {
@@ -65,30 +100,9 @@ function render() {
     ? state.status.outputs.map(renderOutput).join('')
     : '<div class="empty">没有已启动的输出。</div>';
 
-  // 状态文本
-  let statusText = '已停止';
-  let statusClass = '';
-  if (state.busyAction === 'starting') {
-    statusText = '正在启动...';
-    statusClass = 'busy';
-  } else if (state.busyAction === 'stopping') {
-    statusText = '正在停止...';
-    statusClass = 'busy';
-  } else if (running) {
-    statusText = '运行中';
-    statusClass = 'running';
-  }
-
   app.innerHTML = `
     <main class="shell">
       <section class="topbar">
-        <div>
-          <p class="eyebrow">DIVA Slider</p>
-          <h1>服务端配置</h1>
-        </div>
-        <div class="status ${statusClass}">
-          <span></span>${statusText}
-        </div>
       </section>
 
       ${state.error ? `
