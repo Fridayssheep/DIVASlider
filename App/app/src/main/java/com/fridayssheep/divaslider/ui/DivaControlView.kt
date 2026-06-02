@@ -78,11 +78,9 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
     private var backgroundShader: LinearGradient? = null
     private var controlsExpanded = false
     private var toolMenuOpen = false
+    private var navEnabled = false
     private var toolMenuAnimator: ValueAnimator? = null
     private var toolMenuProgress = 0f
-    private var toolButtonPressAnimator: ValueAnimator? = null
-    private var toolButtonPressRect = RectF()
-    private var toolButtonPressProgress = 0f
     private var expandProgress = 0f
     private var panelHeightRatio = 0f
     private var expandAnimator: android.animation.ValueAnimator? = null
@@ -195,6 +193,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
                                 expandAnimator?.cancel()
                                 expandProgress = 1f
                                 pointers.clear()
+                                navEnabled = false
                                 input.update(0, ByteArray(32))
                             }
                             lockLongPressHandled = true
@@ -276,26 +275,6 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
         invalidate()
     }
 
-    private fun animateToolButtonPress(rect: RectF) {
-        toolButtonPressAnimator?.cancel()
-        toolButtonPressRect.set(rect)
-        toolButtonPressAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 200
-            interpolator = DecelerateInterpolator()
-            addUpdateListener {
-                toolButtonPressProgress = it.animatedValue as Float
-                invalidate()
-            }
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    toolButtonPressProgress = 0f
-                    invalidate()
-                }
-            })
-            start()
-        }
-    }
-
     private fun toggleToolMenu() {
         toolMenuOpen = !toolMenuOpen
         toolMenuAnimator?.cancel()
@@ -314,6 +293,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
         if (panelLocked) return
         controlsExpanded = !controlsExpanded
         pointers.clear()
+        navEnabled = false
         if (!controlsExpanded) {
             toolMenuOpen = false
             toolMenuProgress = 0f
@@ -339,6 +319,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
         expandAnimator?.cancel()
         expandProgress = 1f
         pointers.clear()
+        navEnabled = false
         toolMenuOpen = false
         toolMenuProgress = 0f
         toolMenuAnimator?.cancel()
@@ -401,6 +382,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
                 expandAnimator?.cancel()
                 expandProgress = 1f
                 pointers.clear()
+                navEnabled = false
                 input.update(0, ByteArray(32))
             }
             lockLongPressHandled = true
@@ -417,12 +399,12 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
     private fun rebuildInput() {
         layoutRects()
         pressure.fill(0)
-        var buttonMask = 0
+        var buttonMask = if (navEnabled) BUTTON_NAV else 0
 
         for (pointer in pointers.values) {
             var handledTool = false
             for (button in toolButtons) {
-                if (!button.pulseCoin && !button.pulse && button.rect.contains(pointer.x, pointer.y)) {
+                if (button.bit != BUTTON_NAV && !button.pulseCoin && !button.pulse && button.rect.contains(pointer.x, pointer.y)) {
                     buttonMask = buttonMask or button.bit
                     handledTool = true
                 }
@@ -455,15 +437,20 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
     private fun handleToolTap(x: Float, y: Float): Boolean {
         layoutRects()
         for (button in toolButtons) {
+            if (button.bit == BUTTON_NAV && button.rect.contains(x, y)) {
+                navEnabled = !navEnabled
+                rebuildInput()
+                invalidate()
+                return true
+            }
             if (button.pulseCoin && button.rect.contains(x, y)) {
                 input.pulseCoin()
-                animateToolButtonPress(button.rect)
                 return true
             }
             if (button.pulse && button.rect.contains(x, y)) {
-                input.update(button.bit, ByteArray(32))
+                val heldButtons = if (navEnabled) BUTTON_NAV else 0
+                input.update(heldButtons or button.bit, ByteArray(32))
                 postDelayed({ rebuildInput() }, 70L)
-                animateToolButtonPress(button.rect)
                 return true
             }
         }
@@ -712,10 +699,10 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
     }
 
     private fun drawButtons(canvas: Canvas) {
-        var buttonMask = 0
+        var buttonMask = if (navEnabled) BUTTON_NAV else 0
         for (pointer in pointers.values) {
             for (button in toolButtons) {
-                if (!button.pulseCoin && !button.pulse && button.rect.contains(pointer.x, pointer.y)) {
+                if (button.bit != BUTTON_NAV && !button.pulseCoin && !button.pulse && button.rect.contains(pointer.x, pointer.y)) {
                     buttonMask = buttonMask or button.bit
                 }
             }
@@ -769,31 +756,64 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
             
             val iconRadius = radius * 0.40f
             var drawTextLabel = false
-            
-            when (button.label) {
-                "TRI" -> {
-                    val h = iconRadius * 0.866f
-                    iconPath.moveTo(cx, cy - iconRadius)
-                    iconPath.lineTo(cx + h, cy + iconRadius * 0.5f)
-                    iconPath.lineTo(cx - h, cy + iconRadius * 0.5f)
-                    iconPath.close()
+
+            if (navEnabled) {
+                val h = iconRadius * 0.866f
+                when (button.label) {
+                    "TRI" -> {
+                        iconPath.moveTo(cx, cy - iconRadius)
+                        iconPath.lineTo(cx + h, cy + iconRadius * 0.5f)
+                        iconPath.lineTo(cx - h, cy + iconRadius * 0.5f)
+                        iconPath.close()
+                    }
+                    "SQR" -> {
+                        iconPath.moveTo(cx - iconRadius, cy)
+                        iconPath.lineTo(cx + iconRadius * 0.5f, cy - h)
+                        iconPath.lineTo(cx + iconRadius * 0.5f, cy + h)
+                        iconPath.close()
+                    }
+                    "X" -> {
+                        iconPath.moveTo(cx - h, cy - iconRadius * 0.5f)
+                        iconPath.lineTo(cx + h, cy - iconRadius * 0.5f)
+                        iconPath.lineTo(cx, cy + iconRadius)
+                        iconPath.close()
+                    }
+                    "O" -> {
+                        iconPath.moveTo(cx + iconRadius, cy)
+                        iconPath.lineTo(cx - iconRadius * 0.5f, cy - h)
+                        iconPath.lineTo(cx - iconRadius * 0.5f, cy + h)
+                        iconPath.close()
+                    }
+                    else -> {
+                        drawTextLabel = true
+                    }
                 }
-                "SQR" -> {
-                    val r = iconRadius * 0.75f
-                    iconPath.addRect(cx - r, cy - r, cx + r, cy + r, android.graphics.Path.Direction.CW)
-                }
-                "X" -> {
-                    val r = iconRadius * 0.7f
-                    iconPath.moveTo(cx - r, cy - r)
-                    iconPath.lineTo(cx + r, cy + r)
-                    iconPath.moveTo(cx + r, cy - r)
-                    iconPath.lineTo(cx - r, cy + r)
-                }
-                "O" -> {
-                    iconPath.addCircle(cx, cy, iconRadius * 0.85f, android.graphics.Path.Direction.CW)
-                }
-                else -> {
-                    drawTextLabel = true
+            } else {
+                when (button.label) {
+                    "TRI" -> {
+                        val h = iconRadius * 0.866f
+                        iconPath.moveTo(cx, cy - iconRadius)
+                        iconPath.lineTo(cx + h, cy + iconRadius * 0.5f)
+                        iconPath.lineTo(cx - h, cy + iconRadius * 0.5f)
+                        iconPath.close()
+                    }
+                    "SQR" -> {
+                        val r = iconRadius * 0.75f
+                        iconPath.addRect(cx - r, cy - r, cx + r, cy + r, android.graphics.Path.Direction.CW)
+                    }
+                    "X" -> {
+                        val r = iconRadius * 0.7f
+                        iconPath.moveTo(cx - r, cy - r)
+                        iconPath.lineTo(cx + r, cy + r)
+                        iconPath.moveTo(cx + r, cy - r)
+                        iconPath.lineTo(cx - r, cy + r)
+                    }
+                    "O" -> {
+                        iconPath.addCircle(cx, cy, iconRadius * 0.85f, android.graphics.Path.Direction.CW)
+                    }
+                    else -> {
+                        drawTextLabel = true
+                    }
                 }
             }
             
@@ -859,16 +879,11 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
 
             val alpha = (toolMenuProgress * 255).toInt().coerceIn(0, 255)
 
-            // 按下反馈动画
-            val isPressing = !toolButtonPressRect.isEmpty &&
-                             toolButtonPressProgress > 0f &&
-                             RectF.intersects(button.rect, toolButtonPressRect)
-            val pressed = active || isPressing
-            val pressScale = if (isPressing) 1f + toolButtonPressProgress * 0.15f else 1f
+            val pressed = active
 
             paint.style = Paint.Style.FILL
             paint.color = Color.argb((if (pressed) 230 else 176) * alpha / 255, 4, 8, 14)
-            canvas.drawCircle(cx, cy, radius * 0.95f * pressScale, paint)
+            canvas.drawCircle(cx, cy, radius * 0.95f, paint)
 
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = dp(2)
@@ -878,7 +893,7 @@ internal class DivaControlView(context: Context, private val input: DivaInputSta
             } else {
                 Color.argb(strokeAlpha, Color.red(button.baseColor), Color.green(button.baseColor), Color.blue(button.baseColor))
             }
-            canvas.drawCircle(cx, cy, radius * 0.88f * pressScale, paint)
+            canvas.drawCircle(cx, cy, radius * 0.88f, paint)
 
             paint.style = Paint.Style.FILL
             paint.textSize = if (button.label.length > 5) {

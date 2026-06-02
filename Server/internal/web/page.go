@@ -63,6 +63,8 @@ main::before { content:""; position:absolute; inset:0; background:linear-gradien
 .game-button .shape .inner { stroke-width:8; opacity:.58; }
 .game-button.down .shape .outer, .game-button.lit .shape .outer { opacity:.85; }
 .game-button.down .shape .inner, .game-button.lit .shape .inner { opacity:1; }
+.game-button.nav-face .nav-shape .inner { fill:var(--btn-color); stroke:none; opacity:.64; }
+.game-button.nav-face.down .nav-shape .inner, .game-button.nav-face.lit .nav-shape .inner { opacity:1; }
 .tool-menu { position:absolute; right:12px; bottom:12px; width:64px; height:64px; --menu-size:64px; --side-size:64px; z-index:8; opacity:0; transform:scale(.84); transition:opacity 180ms ease, transform 180ms ease; pointer-events:none; overflow:visible; }
 #buttonPanel.expanded .tool-menu { opacity:1; transform:scale(1); pointer-events:auto; }
 .tool-menu-button,
@@ -117,10 +119,10 @@ const BUTTONS = {
   nav: 256
 };
 const gameDefs = [
-  { id:"triangle", bit:BUTTONS.triangle, cls:"tri", color:"#86f6cf" },
-  { id:"square", bit:BUTTONS.square, cls:"sqr", color:"#e066ff" },
-  { id:"cross", bit:BUTTONS.cross, cls:"cross", color:"#508bff" },
-  { id:"circle", bit:BUTTONS.circle, cls:"circle", color:"#ff7381" }
+  { id:"triangle", bit:BUTTONS.triangle, cls:"tri", dir:"up", color:"#86f6cf" },
+  { id:"square", bit:BUTTONS.square, cls:"sqr", dir:"left", color:"#e066ff" },
+  { id:"cross", bit:BUTTONS.cross, cls:"cross", dir:"down", color:"#508bff" },
+  { id:"circle", bit:BUTTONS.circle, cls:"circle", dir:"right", color:"#ff7381" }
 ];
 
 const slider = document.getElementById("slider");
@@ -143,6 +145,7 @@ let panelExpanded = false;
 let panelLocked = false;
 let inputEnabled = false;
 let toolMenuOpen = false;
+let navEnabled = false;
 
 for (let i = 0; i < 32; i++) {
   const cell = document.createElement("div");
@@ -165,7 +168,7 @@ const toolButtons = [
   { label:"TEST", bit:BUTTONS.test, kind:"pulse", rgb:"94,234,212" },
   { label:"SERVICE", bit:BUTTONS.service, kind:"pulse", rgb:"94,234,212" },
   { label:"COIN", bit:0, kind:"coin", rgb:"241,198,75" },
-  { label:"NAV", bit:BUTTONS.nav, kind:"hold", rgb:"56,189,248" }
+  { label:"NAV", bit:BUTTONS.nav, kind:"toggle", rgb:"56,189,248" }
 ];
 
 for (const def of toolButtons) {
@@ -176,6 +179,8 @@ for (const def of toolButtons) {
     wireCoinButton(button);
   } else if (def.kind === "pulse") {
     wirePulseButton(button, def.bit);
+  } else if (def.kind === "toggle") {
+    wireToggleButton(button, def.bit);
   } else {
     wireHoldButton(button, def.bit);
   }
@@ -184,7 +189,7 @@ layoutToolMenu();
 
 function makeSideButton(label, rgb) {
   const button = document.createElement("button");
-  button.className = "side-button tap-fill";
+  button.className = "side-button";
   button.style.setProperty("--tool-rgb", rgb);
   button.textContent = label;
   return button;
@@ -201,6 +206,37 @@ function shapeSVG(cls) {
     return '<svg class="shape" viewBox="0 0 100 100" aria-hidden="true"><circle class="outer" cx="50" cy="50" r="44"></circle><path class="inner" d="M36 36 L64 64 M64 36 L36 64"></path></svg>';
   }
   return '<svg class="shape" viewBox="0 0 100 100" aria-hidden="true"><circle class="outer" cx="50" cy="50" r="44"></circle><circle class="inner" cx="50" cy="50" r="20"></circle></svg>';
+}
+
+function directionSVG(dir) {
+  const paths = {
+    up: "M50 24 L72 68 L28 68 Z",
+    left: "M26 50 L70 28 L70 72 Z",
+    down: "M28 32 L72 32 L50 76 Z",
+    right: "M74 50 L30 28 L30 72 Z"
+  };
+  return '<svg class="shape nav-shape" viewBox="0 0 100 100" aria-hidden="true"><circle class="outer" cx="50" cy="50" r="44"></circle><path class="inner" d="' + paths[dir] + '"></path></svg>';
+}
+
+function updateButtonFaces() {
+  for (const def of gameDefs) {
+    const button = buttonElements.get(def.bit);
+    if (!button) continue;
+    button.classList.toggle("nav-face", navEnabled);
+    button.innerHTML = navEnabled ? directionSVG(def.dir) : shapeSVG(def.cls);
+  }
+}
+
+function setNavEnabled(enabled) {
+  navEnabled = enabled;
+  if (navEnabled) {
+    buttons |= BUTTONS.nav;
+  } else {
+    buttons &= ~BUTTONS.nav;
+  }
+  const button = buttonElements.get(BUTTONS.nav);
+  if (button) button.classList.toggle("down", navEnabled);
+  updateButtonFaces();
 }
 
 function connect() {
@@ -292,11 +328,13 @@ function updateInputToggle() {
 
 function clearLocalInput() {
   buttons = 0;
+  navEnabled = false;
   activePointers.clear();
   pressure.fill(0);
   toolMenuOpen = false;
   for (const cell of cells) cell.classList.remove("on");
   for (const button of buttonElements.values()) button.classList.remove("down");
+  updateButtonFaces();
   updateToolMenu();
 }
 
@@ -365,7 +403,6 @@ function wirePulseButton(button, bit) {
   button.addEventListener("pointerdown", e => {
     e.preventDefault();
     if (!inputEnabled) return;
-    flashTap(button, e);
     pulseButton(button, bit);
   });
 }
@@ -385,13 +422,21 @@ function wireCoinButton(button) {
   button.addEventListener("pointerdown", e => {
     e.preventDefault();
     if (!inputEnabled) return;
-    flashTap(button, e);
     button.classList.add("down");
     send(true);
   });
   const up = () => button.classList.remove("down");
   button.addEventListener("pointerup", up);
   button.addEventListener("pointercancel", up);
+}
+
+function wireToggleButton(button, bit) {
+  button.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    if (!inputEnabled) return;
+    setNavEnabled(!navEnabled);
+    send();
+  });
 }
 
 function flashTap(el, event) {
