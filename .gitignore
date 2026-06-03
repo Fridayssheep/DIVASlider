@@ -2,6 +2,7 @@
 Resource/
 
 # IDE/editor state.
+.claude/
 .idea/
 .vscode/
 .vs/
@@ -19,7 +20,10 @@ Desktop.ini
 # Environment and local config.
 .env
 .env.*
+local.properties
 App/local.properties
+AndroidApp/local.properties
+keystore.properties
 
 # Logs and runtime diagnostics.
 *.log
@@ -28,6 +32,9 @@ divaslider-dll.log
 # Build output directories.
 build/
 **/build/
+ControlCenter/frontend/dist/
+ControlCenter/frontend/node_modules/
+ControlCenter/frontend/package.json.md5
 DivaSliderDesktop/frontend/dist/
 DivaSliderDesktop/frontend/node_modules/
 DivaSliderDesktop/frontend/package.json.md5
@@ -43,6 +50,10 @@ Server/divaslider-server.exe
 # Android/Gradle output.
 App/.gradle/
 App/.kotlin/
+AndroidApp/.gradle/
+AndroidApp/.kotlin/
+AndroidApp/app/debug/
+AndroidApp/app/release/
 *.apk
 *.ap_
 *.aab
@@ -57,3 +68,5 @@ App/.kotlin/
 *.ipdb
 *.dll
 *.jks
+*.keystore
+*.p12
