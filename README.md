@@ -9,7 +9,7 @@ This repository **does not** include game files, Segatools, or PDLoader binaries
 本项目是一个面向 Project DIVA Arcade 的手机和浏览器滑条模拟器
 ，提供 32 格触摸滑条、机台按钮灯光反馈，不需要修改游戏文件，项目灵感来源于[brokenithm](https://github.com/tindy2013/Brokenithm-Android)
 
-本仓库 **不包含** 游戏文件、Segatools 或 PDLoader 二进制文件，中文文档[请移步](README.zh-CN.md)
+本仓库 **不包含** 游戏文件、Segatools 或 PDLoader ，中文文档[请移步](README.zh-CN.md)
 ## Features
 
 - Touch slider input for the DLL/TLAC path and joystick-slider mode.
@@ -191,8 +191,6 @@ DLL diagnostics are written to the game's working directory:
 ```text
 divaslider-dll.log
 ```
-
-Useful log lines:
 
 - `shared memory opened`: the DLL can see the server.
 - `jvs_state`: JVS button and coin state read by the DLL.

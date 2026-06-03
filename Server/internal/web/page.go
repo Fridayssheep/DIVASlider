@@ -47,7 +47,7 @@ main::before { content:""; position:absolute; inset:0; background:linear-gradien
 .tap-fill::after { content:""; position:absolute; left:var(--tap-x, 50%); top:var(--tap-y, 50%); width:1px; height:1px; border-radius:999px; background:var(--tap-color, rgba(94,234,212,.42)); transform:translate(-50%, -50%) scale(0); opacity:0; pointer-events:none; }
 .tap-fill.flash::after { animation:tap-fill 230ms ease-out; }
 @keyframes tap-fill { 0% { transform:translate(-50%, -50%) scale(0); opacity:.95; } 100% { transform:translate(-50%, -50%) scale(260); opacity:0; } }
-#buttonPanel { position:absolute; left:18px; right:18px; bottom:10px; min-height:34px; height:34px; border-radius:16px; background:rgba(12,18,30,.78); z-index:4; overflow:visible; transition:height 250ms ease, background 250ms ease; --menu-size:52px; --side-size:52px; }
+#buttonPanel { position:absolute; left:18px; right:18px; bottom:10px; min-height:34px; height:34px; border-radius:16px; background:rgba(12,18,30,.78); z-index:4; overflow:visible; transition:height 250ms ease, background 250ms ease; --menu-size:44px; --side-size:52px; }
 #buttonPanel.expanded { height:min(38vh, 320px); background:rgba(12,18,30,.9); }
 .panel-tool { position:absolute; top:-4px; height:30px; border:0; border-radius:14px; background:rgba(220,252,248,.92); color:#08131f; font-size:12px; font-weight:900; display:flex; align-items:center; justify-content:center; z-index:7; }
 #lockButton { left:10px; width:56px; }
@@ -71,10 +71,10 @@ main::before { content:""; position:absolute; inset:0; background:linear-gradien
 #buttonPanel.expanded .tool-menu { opacity:1; transform:scale(1); pointer-events:auto; }
 .tool-menu-button,
 .side-button { position:absolute; border:3px solid rgba(148,163,184,.42); border-radius:999px; background:rgba(15,23,42,.76); color:rgba(236,254,255,.82); min-height:0; font-size:10px; font-weight:900; touch-action:none; padding:0; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(0,0,0,.28); }
-.start-button { position:absolute; right:12px; top:12px; width:var(--menu-size); height:var(--menu-size); border:2px solid rgba(250,204,21,.78); border-radius:999px; background:rgba(15,23,42,.46); color:rgba(250,204,21,.96); font-size:11px; font-weight:900; touch-action:none; padding:0; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(0,0,0,.28); opacity:0; transform:translateY(8px); transition:opacity 180ms ease, transform 180ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease; pointer-events:none; z-index:7; }
+.start-button { position:absolute; right:12px; top:12px; width:var(--menu-size); height:var(--menu-size); border:2px solid rgba(250,204,21,.78); border-radius:999px; background:rgba(15,23,42,.46); color:rgba(250,204,21,.96); font-size:10px; font-weight:900; touch-action:none; padding:0; display:flex; align-items:center; justify-content:center; box-shadow:0 10px 24px rgba(0,0,0,.28); opacity:0; transform:translateY(8px); transition:opacity 180ms ease, transform 180ms ease, background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease; pointer-events:none; z-index:7; }
 #buttonPanel.expanded .start-button { opacity:1; transform:translateY(0); pointer-events:auto; }
 .start-button.down { color:#041018; border-color:rgba(250,204,21,.95); background:rgba(250,204,21,.9); box-shadow:inset 0 0 0 999px rgba(255,255,255,.08), 0 0 20px rgba(250,204,21,.42); }
-.tool-menu-button { right:0; bottom:0; width:100%; height:100%; border:2px solid rgba(94,234,212,.78); color:rgba(94,234,212,.96); background:rgba(15,23,42,.46); font-size:11px; z-index:2; }
+.tool-menu-button { right:0; bottom:0; width:100%; height:100%; border:2px solid rgba(94,234,212,.78); color:rgba(94,234,212,.96); background:rgba(15,23,42,.46); font-size:10px; z-index:2; }
 .tool-menu.open .tool-menu-button { color:#041018; border-color:rgba(94,234,212,.95); background:rgba(94,234,212,.9); box-shadow:inset 0 0 0 999px rgba(255,255,255,.08), 0 0 20px rgba(94,234,212,.38); }
 .side-button { right:calc((var(--menu-size) - var(--side-size)) / 2); bottom:calc((var(--menu-size) - var(--side-size)) / 2); width:var(--side-size); height:var(--side-size); border-color:rgba(var(--tool-rgb, 148,163,184), .58); color:rgba(var(--tool-rgb, 236,254,255), .92); opacity:0; transform:translate(var(--tx), var(--ty)) scale(.6); transition:opacity 210ms ease, transform 240ms cubic-bezier(.2,.9,.2,1.1), background 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease; pointer-events:none; }
 .tool-menu.open .side-button { opacity:1; pointer-events:auto; transform:translate(var(--tx), var(--ty)) scale(1); }
@@ -87,11 +87,11 @@ button { cursor:pointer; letter-spacing:0; }
   #buttonPanel { left:10px; right:10px; }
   #buttonPanel.expanded { height:min(40vh, 260px); }
   #buttonGrid { grid-template-columns:repeat(4, 1fr); gap:10px; }
-  #buttonPanel { --menu-size:48px; --side-size:48px; }
+  #buttonPanel { --menu-size:40px; --side-size:48px; }
   .tool-menu { width:var(--menu-size); height:var(--menu-size); }
-  .tool-menu-button { font-size:10px; }
+  .tool-menu-button { font-size:9px; }
   .side-button { font-size:9px; }
-  .start-button { font-size:10px; }
+  .start-button { font-size:9px; }
 }
 </style>
 </head>

@@ -4,11 +4,6 @@ import kotlin.math.min
 import kotlin.math.sqrt
 import kotlin.math.max
 
-/**
- * Pure layout calculation for the control surface. Reads view size and the
- * current animation/resize state, writes every rectangle into [ControlGeometry].
- * Holds no mutable state of its own beyond the screen density.
- */
 internal class ControlLayout(private val density: Float) {
 
     private fun dp(value: Int): Float = value * density
@@ -19,8 +14,6 @@ internal class ControlLayout(private val density: Float) {
     }
 
     fun maxPanelRatio(): Float = 0.70f
-
-    /** Default panel height ratio used to seed state once the view is sized. */
     fun defaultPanelRatio(height: Int): Float {
         if (height <= 0) return 0f
         val defaultExpandedHeight = min(dp(150), height * 0.34f)
@@ -58,7 +51,7 @@ internal class ControlLayout(private val density: Float) {
             return
         }
 
-        val menuDiameter = min(dp(54), g.panel.height() * 0.40f)
+        val menuDiameter = min(dp(46), g.panel.height() * 0.34f)
         g.menu.set(
             g.panel.right - menuDiameter - dp(12),
             g.panel.bottom - menuDiameter - dp(12),

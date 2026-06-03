@@ -1,16 +1,6 @@
 package com.fridayssheep.divaslider.ui.control
 
 import android.graphics.RectF
-
-/**
- * Holds every laid-out rectangle for the control surface. Filled by
- * [ControlLayout.layout] and read by the input mapper and renderer. Pure data:
- * no Android view or animation state lives here.
- *
- * [padRects] is parallel-indexed with [ControlSpecs.padButtons]; [toolRects] is
- * parallel-indexed with [ControlSpecs.toolButtons]. An empty rect means the
- * element is not currently visible/hittable.
- */
 internal class ControlGeometry {
     val slider = RectF()
     val rail = RectF()

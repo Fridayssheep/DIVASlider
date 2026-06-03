@@ -10,14 +10,12 @@ import com.fridayssheep.divaslider.input.BUTTON_START
 import com.fridayssheep.divaslider.input.BUTTON_TEST
 import com.fridayssheep.divaslider.input.BUTTON_TRIANGLE
 
-/** Immutable spec for a face/pad button (the four DIVA buttons + START). */
 internal data class PadButtonSpec(
     val label: String,
     val bit: Int,
     val baseColor: Int
 )
 
-/** Immutable spec for a tool-menu button (TEST/SERVICE/COIN/NAV). */
 internal data class ToolButtonSpec(
     val label: String,
     val bit: Int,
@@ -26,7 +24,6 @@ internal data class ToolButtonSpec(
     val pulse: Boolean = false
 )
 
-/** Static button definitions shared by layout, input mapping and rendering. */
 internal object ControlSpecs {
     val padButtons: List<PadButtonSpec> = listOf(
         PadButtonSpec("TRI", BUTTON_TRIANGLE, Color.rgb(134, 246, 207)),

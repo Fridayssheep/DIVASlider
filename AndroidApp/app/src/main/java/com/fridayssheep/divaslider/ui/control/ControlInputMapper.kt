@@ -5,18 +5,11 @@ import com.fridayssheep.divaslider.input.BUTTON_START
 import kotlin.math.max
 import kotlin.math.min
 
-/** Result of mapping the current pointers onto the control surface. */
 internal class InputFrame(
     val buttonMask: Int,
     val pressure: ByteArray
 )
 
-/**
- * Pure mapping from active pointers to a [InputFrame] (button mask + 32 slider
- * cells). This is the single source of truth for "which buttons are pressed":
- * the view feeds the mask to [DivaInputState] and the renderer reads the same
- * frame for highlight, so the two can never disagree.
- */
 internal class ControlInputMapper {
 
     fun map(
@@ -71,5 +64,4 @@ internal class ControlInputMapper {
     }
 }
 
-/** Lightweight read-only pointer position for mapping/rendering. */
 internal data class PointerXY(val x: Float, val y: Float)

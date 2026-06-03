@@ -14,11 +14,6 @@ import com.fridayssheep.divaslider.input.BUTTON_START
 import com.fridayssheep.divaslider.ui.Palette
 import kotlin.math.hypot
 import kotlin.math.max
-
-/**
- * Snapshot of transient press feedback the view computes each frame and hands
- * to the renderer, so the renderer stays stateless about touch internals.
- */
 internal class PressFeedback(
     val panelLocked: Boolean,
     val handleDragging: Boolean,
@@ -38,10 +33,6 @@ internal class PressFeedback(
     val handleTap: Float
 )
 
-/**
- * All Canvas drawing for the control surface. Stateless apart from cached paint
- * objects and the screen density; every frame's data arrives via parameters.
- */
 internal class ControlRenderer(
     private val density: Float,
     private val scaledDensity: Float
@@ -275,8 +266,6 @@ internal class ControlRenderer(
             canvas.drawText(spec.label, cx, cy + paint.textSize * 0.36f, paint)
         }
     }
-
-    /** Adds the per-button icon to [iconPath]; returns true if a text label should be drawn instead. */
     private fun buildPadIcon(label: String, cx: Float, cy: Float, iconRadius: Float, navEnabled: Boolean): Boolean {
         if (navEnabled) {
             val h = iconRadius * 0.866f
@@ -375,7 +364,7 @@ internal class ControlRenderer(
         paint.style = Paint.Style.FILL
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = Typeface.DEFAULT_BOLD
-        paint.textSize = 11f * scaledDensity
+        paint.textSize = 10f * scaledDensity
         paint.color = if (active) {
             Color.argb(alpha, 4, 16, 24)
         } else {
@@ -405,7 +394,7 @@ internal class ControlRenderer(
         paint.textAlign = Paint.Align.CENTER
         paint.typeface = Typeface.DEFAULT_BOLD
         paint.style = Paint.Style.FILL
-        paint.textSize = 11f * scaledDensity
+        paint.textSize = 10f * scaledDensity
         paint.color = if (toolMenuOpen) Color.rgb(4, 16, 24) else Color.rgb(94, 234, 212)
         canvas.drawText("MENU", menuRect.centerX(), menuRect.centerY() + paint.textSize * 0.34f, paint)
 

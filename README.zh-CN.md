@@ -5,7 +5,7 @@
 本项目是一个面向 Project DIVA Arcade 的手机和浏览器滑条模拟器
 ，提供 32 格触摸滑条、机台按钮灯光反馈，不需要修改游戏文件，项目灵感来源于[brokenithm](https://github.com/tindy2013/Brokenithm-Android)
 
-本仓库 **不包含** 游戏文件、Segatools 或 PDLoader 二进制文件。
+本仓库 **不包含** 游戏文件、Segatools 或 PDLoader 文件。
 
 ## 功能
 
@@ -180,8 +180,6 @@ DLL 诊断日志会写入游戏当前工作目录：
 ```text
 divaslider-dll.log
 ```
-
-常用日志行：
 
 - `shared memory opened`：DLL 可以看到服务端。
 - `jvs_state`：DLL 读取到的 JVS 按钮和投币状态。
