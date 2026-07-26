@@ -14,6 +14,7 @@ import (
 	"divaslider-server/internal/state"
 	"divaslider-server/internal/udp"
 	"divaslider-server/internal/web"
+	"divaslider-server/internal/wintime"
 	"divaslider-server/pkg/inputmethod"
 	"divaslider-server/pkg/output"
 )
@@ -33,11 +34,12 @@ type Runner struct {
 }
 
 type Status struct {
-	Running bool               `json:"running"`
-	Config  inputmethod.Config `json:"config"`
-	Input   state.Snapshot     `json:"input"`
-	Outputs []output.Status    `json:"outputs"`
-	HTTPURL string             `json:"httpUrl"`
+	Running bool                   `json:"running"`
+	Config  inputmethod.Config     `json:"config"`
+	Input   state.Snapshot         `json:"input"`
+	Outputs []output.Status        `json:"outputs"`
+	Timing  output.MetricsSnapshot `json:"timing"`
+	HTTPURL string                 `json:"httpUrl"`
 }
 
 func New(cfg inputmethod.Config, logger *log.Logger) (*Runner, error) {
@@ -64,6 +66,11 @@ func (r *Runner) Start() error {
 	if r.cancel != nil {
 		return nil
 	}
+
+	// The server is always in the background while the game has focus, which is
+	// exactly when Windows 11 parks it on efficiency cores and ignores its timer
+	// resolution requests. Opt out before the output loop starts.
+	wintime.BoostProcess()
 
 	r.ctx, r.cancel = context.WithCancel(context.Background())
 	r.wg.Add(1)
@@ -100,7 +107,13 @@ func (r *Runner) Start() error {
 
 	if r.cfg.HTTPEnabled {
 		server := &http.Server{Addr: r.cfg.HTTPAddr}
-		webServer := &web.Server{State: r.manager, Buffer: r.buffer, Logger: r.logger}
+		webServer := &web.Server{
+			State:       r.manager,
+			Buffer:      r.buffer,
+			Timing:      r.outputs.Metrics,
+			ResetTiming: r.outputs.ResetMetrics,
+			Logger:      r.logger,
+		}
 		server.Handler = webServer.Handler()
 		r.server = server
 
@@ -115,6 +128,12 @@ func (r *Runner) Start() error {
 	}
 
 	r.logger.Printf("input_method=%s http=%s udp=%s", r.cfg.ID, r.cfg.HTTPAddr, r.cfg.UDPAddr)
+	// Every Go timer wakeup on Windows is quantized to this period, so a value
+	// near 15.625ms means the output loop cannot reach its configured rate.
+	r.logger.Printf(
+		"output target=%dms system timer resolution: %s",
+		r.cfg.OutputRefreshMillis,
+		wintime.QueryTimerResolution())
 	r.logger.Printf("button bits: circle=0x01 cross=0x02 square=0x04 triangle=0x08 start=0x10 test=0x20 service=0x40 coin=0x80 nav=0x100")
 	return nil
 }
@@ -166,6 +185,7 @@ func (r *Runner) Status() Status {
 	}
 	if r.outputs != nil {
 		status.Outputs = r.outputs.Statuses()
+		status.Timing = r.outputs.Metrics()
 	}
 	return status
 }
@@ -191,7 +211,8 @@ func (r *Runner) initOutputs() error {
 		adapters = append(adapters, adapter)
 	}
 
-	r.outputs = output.NewManager(adapters...)
+	r.outputs = output.NewManager(
+		time.Duration(r.cfg.OutputRefreshMillis)*time.Millisecond, adapters...)
 	return nil
 }
 

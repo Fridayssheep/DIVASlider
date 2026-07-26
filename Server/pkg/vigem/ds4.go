@@ -20,6 +20,12 @@ const (
 	ds4ButtonTriangle uint16 = 1 << 7
 	ds4ButtonShare    uint16 = 1 << 12
 	ds4ButtonOptions  uint16 = 1 << 13
+
+	// In a real DS4 HID report the low two bits of bSpecial are the PS and
+	// touchpad buttons; the upper six are a report counter that increments on
+	// every report the pad emits.
+	ds4ReportCounterShift = 2
+	ds4ReportCounterMask  = 0x3f
 )
 
 type DS4Report struct {
@@ -81,6 +87,20 @@ func dpadFromButtons(buttons uint16) uint16 {
 	default:
 		return ds4DpadNone
 	}
+}
+
+// WithReportCounter stamps the DS4 report counter into bSpecial.
+//
+// Real hardware advances this on every report, so no two consecutive reports
+// are ever byte-identical. Leaving it at zero means a pad that is being held
+// still emits the exact same bytes over and over, and ViGEmBus has nothing new
+// to hand to the HID stack, so the device goes quiet no matter how often the
+// report is submitted. That reads back as a near-zero polling rate to anything
+// measuring real HID reports.
+func (r DS4Report) WithReportCounter(counter uint8) DS4Report {
+	r.Special = (r.Special &^ (ds4ReportCounterMask << ds4ReportCounterShift)) |
+		((counter & ds4ReportCounterMask) << ds4ReportCounterShift)
+	return r
 }
 
 func (r DS4Report) Bytes() []byte {

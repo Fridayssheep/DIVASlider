@@ -46,6 +46,8 @@ Server/.gocache/
 coverage.out
 Server/divaslider-server
 Server/divaslider-server.exe
+# `go build ./...` in ControlCenter/ drops the binary here, outside build/bin.
+ControlCenter/DivaSliderDesktop.exe
 
 # Android/Gradle output.
 App/.gradle/

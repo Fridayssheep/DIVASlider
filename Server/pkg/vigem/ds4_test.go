@@ -48,6 +48,42 @@ func TestDS4ReportUsesNavLayerForDpad(t *testing.T) {
 	}
 }
 
+func TestWithReportCounterOnlyTouchesTheCounterBits(t *testing.T) {
+	// PS and touchpad live in the low two bits and must survive untouched.
+	base := DS4Report{Special: 0x03}
+
+	if got := base.WithReportCounter(0).Special; got != 0x03 {
+		t.Fatalf("counter 0 got %#02x want 0x03", got)
+	}
+	if got := base.WithReportCounter(1).Special; got != 0x07 {
+		t.Fatalf("counter 1 got %#02x want 0x07", got)
+	}
+	// The counter is six bits wide, so 64 wraps back to 0.
+	if got := base.WithReportCounter(64).Special; got != 0x03 {
+		t.Fatalf("counter 64 should wrap, got %#02x want 0x03", got)
+	}
+	if got := base.WithReportCounter(63).Special; got != 0xff {
+		t.Fatalf("counter 63 got %#02x want 0xff", got)
+	}
+}
+
+func TestWithReportCounterMakesConsecutiveReportsDiffer(t *testing.T) {
+	report := DS4ReportFromSnapshot(state.Snapshot{}, mega39.StickAxes{
+		LeftX: 0x80, LeftY: 0x80, RightX: 0x80, RightY: 0x80,
+	})
+
+	// This is the whole point: an idle pad must still produce distinct bytes,
+	// or ViGEmBus has nothing new to forward to the HID stack.
+	seen := map[string]bool{}
+	for i := 0; i < 64; i++ {
+		key := string(report.WithReportCounter(uint8(i)).Bytes())
+		if seen[key] {
+			t.Fatalf("counter %d produced a duplicate report", i)
+		}
+		seen[key] = true
+	}
+}
+
 func TestViGEmDS4Integration(t *testing.T) {
 	if os.Getenv("DIVASLIDER_TEST_VIGEM") != "1" {
 		t.Skip("set DIVASLIDER_TEST_VIGEM=1 to create a real ViGEmBus DS4 target")

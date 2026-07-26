@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"divaslider-server/pkg/inputmethod"
 	"divaslider-server/pkg/runner"
@@ -18,6 +19,7 @@ func main() {
 	disableHTTP := flag.Bool("no-http", false, "disable HTTP/WebSocket debug client")
 	disableUDP := flag.Bool("no-udp", false, "disable UDP input")
 	debug := flag.Bool("debug", false, "enable verbose input state logging")
+	selfTest := flag.Bool("selftest-output", false, "measure output loop timing against ViGEmBus and exit")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "[divaslider] ", log.LstdFlags|log.Lmicroseconds)
@@ -28,6 +30,13 @@ func main() {
 	cfg.HTTPEnabled = !*disableHTTP
 	cfg.UDPEnabled = !*disableUDP
 	cfg.Debug = *debug
+
+	if *selfTest {
+		if err := runSelfTest(time.Duration(cfg.OutputRefreshMillis) * time.Millisecond); err != nil {
+			logger.Fatal(err)
+		}
+		return
+	}
 
 	app, err := runner.New(cfg, logger)
 	if err != nil {

@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"runtime"
 	"sync"
 	"time"
 
 	"divaslider-server/internal/shm"
 	"divaslider-server/internal/state"
+	"divaslider-server/internal/wintime"
 	"divaslider-server/pkg/mega39"
 	"divaslider-server/pkg/vigem"
 )
@@ -30,29 +32,74 @@ type Status struct {
 
 type Manager struct {
 	adapters []Adapter
+	metrics  *Metrics
 }
 
-func NewManager(adapters ...Adapter) *Manager {
-	return &Manager{adapters: adapters}
+func NewManager(interval time.Duration, adapters ...Adapter) *Manager {
+	return &Manager{adapters: adapters, metrics: NewMetrics(interval)}
+}
+
+func (m *Manager) Metrics() MetricsSnapshot {
+	return m.metrics.Snapshot()
+}
+
+// ResetMetrics zeroes the histograms. Percentiles accumulated since startup
+// dilute a short stall into invisibility, so measuring a specific window means
+// clearing first.
+func (m *Manager) ResetMetrics() {
+	m.metrics.Reset()
 }
 
 func (m *Manager) Run(ctx context.Context, stateManager *state.Manager, interval time.Duration) {
 	if interval <= 0 {
 		interval = time.Millisecond
 	}
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+
+	// time.Ticker holds the mean fine but its tail is erratic: measured against
+	// a waitable timer over the same window it spiked to 10ms while the timer
+	// stayed under 2.5ms. A 10ms stall is a visible hitch, so take the timer.
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	wintime.BoostCurrentThread()
+
+	timer := wintime.NewTimer(interval)
+	defer timer.Close()
+
+	var (
+		lastBeat     time.Time
+		lastInput    time.Time
+		lastSequence uint32
+	)
 
 	for {
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			return
-		case <-ticker.C:
-			snapshot := stateManager.SnapshotForWrite()
-			for _, adapter := range m.adapters {
-				adapter.Write(snapshot)
-			}
 		}
+		if !timer.Wait() {
+			return
+		}
+
+		now := time.Now()
+		if !lastBeat.IsZero() {
+			m.metrics.RecordPeriod(now.Sub(lastBeat))
+		}
+		lastBeat = now
+
+		snapshot := stateManager.SnapshotForWrite()
+		// A changed sequence is the only reliable marker that fresh input
+		// landed, which separates a slow output loop from a slow sender.
+		if snapshot.Sequence != lastSequence {
+			if !lastInput.IsZero() {
+				m.metrics.RecordInput(now.Sub(lastInput))
+			}
+			lastSequence = snapshot.Sequence
+			lastInput = now
+		}
+
+		for _, adapter := range m.adapters {
+			adapter.Write(snapshot)
+		}
+		m.metrics.RecordWrite(time.Since(now))
 	}
 }
 
@@ -101,11 +148,12 @@ func (a *SharedMemoryAdapter) Status() Status {
 }
 
 type SliderAdapter struct {
-	stick  *mega39.StickMapper
-	vigem  *vigem.Client
-	last   Status
-	lastMu sync.Mutex
-	logger *log.Logger
+	stick   *mega39.StickMapper
+	vigem   *vigem.Client
+	counter uint8
+	last    Status
+	lastMu  sync.Mutex
+	logger  *log.Logger
 }
 
 func NewSliderAdapter(logger *log.Logger) (*SliderAdapter, error) {
@@ -147,7 +195,14 @@ func (a *SliderAdapter) Write(snapshot state.Snapshot) {
 		a.setStatus(status)
 		return
 	}
-	if err := a.vigem.Update(vigem.DS4ReportFromSnapshot(snapshot, axes)); err != nil {
+
+	// Advance the report counter on every beat, exactly like real hardware, so
+	// no two submissions are byte-identical and the emulated pad keeps emitting
+	// HID reports even while the player holds still. Write is only ever called
+	// from the single output loop, so a plain increment is safe here.
+	a.counter++
+	report := vigem.DS4ReportFromSnapshot(snapshot, axes).WithReportCounter(a.counter)
+	if err := a.vigem.Update(report); err != nil {
 		status.Message = "ViGEmBus DS4 update failed: " + err.Error()
 		a.setStatus(status)
 		return

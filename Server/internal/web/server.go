@@ -19,6 +19,7 @@ import (
 	"divaslider-server/internal/shm"
 	"divaslider-server/internal/state"
 	"divaslider-server/internal/udp"
+	"divaslider-server/pkg/output"
 )
 
 const websocketGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -27,7 +28,11 @@ type Server struct {
 	Addr   string
 	State  *state.Manager
 	Buffer *shm.Buffer
-	Logger *log.Logger
+	// Timing exposes the output loop metrics, so the CLI path can be measured
+	// over HTTP the same way ControlCenter reads them over its bindings.
+	Timing      func() output.MetricsSnapshot
+	ResetTiming func()
+	Logger      *log.Logger
 }
 
 type inputMessage struct {
@@ -51,6 +56,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/", s.handleIndex)
 	mux.HandleFunc("/ws", s.handleWebSocket)
 	mux.HandleFunc("/status", s.handleStatus)
+	mux.HandleFunc("/timing", s.handleTiming)
 	mux.HandleFunc("/debug/hold", s.handleDebugHold)
 	mux.HandleFunc("/debug/slider", s.handleDebugSlider)
 	mux.HandleFunc("/debug/led", s.handleDebugLED)
@@ -70,16 +76,54 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	type statusResponse struct {
 		state.Snapshot
-		LEDs statusLEDs `json:"leds"`
+		LEDs   statusLEDs              `json:"leds"`
+		Timing *output.MetricsSnapshot `json:"timing,omitempty"`
 	}
 
 	response := statusResponse{Snapshot: s.State.Snapshot()}
 	if s.Buffer != nil {
 		response.LEDs = makeStatusLEDs(s.Buffer.ReadLEDs())
 	}
+	if s.Timing != nil {
+		timing := s.Timing()
+		response.Timing = &timing
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(response)
+}
+
+// handleTiming renders the output loop metrics as plain text, because reading
+// the JSON from /status through PowerShell is more trouble than it is worth.
+// Pass ?reset=1 to zero the histograms after reading, which is how you measure
+// one specific window instead of everything since startup.
+func (s *Server) handleTiming(w http.ResponseWriter, r *http.Request) {
+	if s.Timing == nil {
+		http.Error(w, "timing unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
+	t := s.Timing()
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
+	fmt.Fprintf(w, "target        %s per beat\n", output.FormatNanos(t.TargetNanos))
+	fmt.Fprintf(w, "output rate   %.1f Hz\n", t.RateHz)
+	fmt.Fprintf(w, "missed beats  %d\n", t.Missed)
+	if t.Failed > 0 {
+		fmt.Fprintf(w, "FAILED writes %d\n", t.Failed)
+	}
+	fmt.Fprintf(w, "\nloop period   %s\n", t.Period)
+	fmt.Fprintf(w, "adapter write %s\n", t.Write)
+	fmt.Fprintf(w, "input arrival %s\n", t.Input)
+
+	fmt.Fprint(w, "\ninput arrival is the gap between distinct input snapshots.\n")
+	fmt.Fprint(w, "A phone sending at 1kHz should sit near 1-2ms; tens of ms in\n")
+	fmt.Fprint(w, "p95/p99 means the jitter is upstream of this server.\n")
+
+	if r.URL.Query().Get("reset") != "" && s.ResetTiming != nil {
+		s.ResetTiming()
+		fmt.Fprint(w, "\ncounters reset, measuring a fresh window from now.\n")
+	}
 }
 
 func makeStatusLEDs(leds shm.LEDs) statusLEDs {
